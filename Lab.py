@@ -13,8 +13,17 @@ def solve_cauchy(x0: float, y0: float, dy0: float):
     :param dy0: производная функции в точке x0
     :return: функция, удовлетворяющая заданным условиям
     """
-    C2 = (dy0 - 3 * y0 + 1 / 3 * x0 ** 2 - 1 / 9 * x0 + 26 / 27) / 3 / math.exp(3 * x0)
-    C1 = (y0 - 1 / 9 * x0 ** 2 - 1 / 27 * x0 - 1 / 3) / math.exp(3 * x0)
+    A1 = [math.exp(3*x0), x0*math.exp(3*x0)]
+    B1 = y0 - (1/9*x0**2 + 1/27*x0 + 1/3)
+    A2 = [3*math.exp(3*x0), (3*x0 + 1)*math.exp(3*x0)]
+    B2 = dy0 - (2/9*x0 + 1/27)
+    A = np.array([A1,
+                  A2])
+    B = np.array([[B1],
+                  [B2]])
+    X = np.linalg.solve(A, B)
+    [C1], [C2] = X.tolist()
+
     return lambda x: C1 * math.exp(3 * x) + C2 * x * math.exp(3 * x) + 1 / 9 * x ** 2 + 1 / 27 * x + 1 / 3
 
 
