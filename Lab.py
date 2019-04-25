@@ -2,7 +2,7 @@ import math
 import numpy as np
 
 
-def solve_cauchy_analytic(x0: float, y0: float, dy0: float):
+def solve_analytically(x0: float, y0: float, dy0: float):
     """
     Принимает на вход условия для задачи Коши и возврщает функцию, из семейства функций,
     удовлетворяющую условиям задачи Коши
@@ -38,12 +38,12 @@ def prepare_data_for_plotting_func(func: callable, borders: tuple, step=0.01):
     :return: (x, y)
     """
     start, finish = borders
-    x = np.arange(start, finish, step)
+    x = np.arange(start, finish + step, step)
     y = np.array([func(el) for el in x])
     return x, y
 
 
-def solve_euler(x0: float, y0: float, dy0: float, borders: tuple, h=0.01):
+def solve_euler_numerically(x0: float, y0: float, dy0: float, borders: tuple, h=0.01):
     """
     Принимает на вход условия для задачи Коши и границы отрезка, на котором нужно решить ДУ,
     решает уравнение методом Эйлера с помощью построения сетки на необходимом отрезке
@@ -62,22 +62,78 @@ def solve_euler(x0: float, y0: float, dy0: float, borders: tuple, h=0.01):
         raise ArithmeticError
 
     xj, dyj, yj = x0, dy0, y0
-    for xj in np.arange(x0, left + h, h):
-        dyj_next = dyj + h * (6 * dyj - 9 * yj + xj ** 2 - xj + 3)
-        yj_next = yj + h * dyj
-        dyj = dyj_next
-        yj = yj_next
 
-    steps_num = np.int(np.ceil((right - left) / h))
+    if x0 < left:
+        for xj in np.arange(x0, left + h, h):
+            dyj_next = dyj + h * (6 * dyj - 9 * yj + xj ** 2 - xj + 3)
+            yj_next = yj + h * dyj
+            dyj = dyj_next
+            yj = yj_next
+
+    steps_num = np.arange(left, right + h, h).size
     shape = (3, steps_num)
     grid = np.empty(shape, np.float)
     grid[:, 0] = [xj,
                   dyj,
                   yj]
-    grid[0] = np.arange(left + h, right + h, h)
+    grid[0] = np.arange(left, right + h, h)
     for j in np.arange(steps_num - 1):
         xj, dyj, yj = grid[:, j]
         grid[1, j + 1] = dyj + h * (6 * dyj - 9 * yj + xj ** 2 - xj + 3)
         grid[2, j + 1] = yj + h * dyj
+
+    return grid[(0, 2), :]
+
+
+def solve_hyung_numerically(x0: float, y0: float, dy0: float, borders: tuple, h=0.01):
+    """
+    Принимает на вход условия для задачи Коши и границы отрезка, на котором нужно решить ДУ,
+    решает уравнение методом Хьюна с помощью построения сетки на необходимом отрезке
+    и возврщает решение в узлах сетки.
+    Уравнение: y'' - 6*y' + 9*y = x^2 - x + 3
+
+    :param x0: точка, для которой известны начальные условия задачи Коши
+    :param y0: функция в точке x0
+    :param dy0: производная функции в точке x0
+    :param borders: границы
+    :param h: шаг сетки
+    :return: двумерный массив, первая строка - X, вторая - Y
+    """
+    left, right = borders
+    if x0 > left:
+        raise ArithmeticError
+
+    xj, dyj, yj = x0, dy0, y0
+
+    if x0 < left:
+        for xj in np.arange(x0, left + h, h):
+            xj_temp = xj + h
+            dyj_temp = dyj + h * (6 * dyj - 9 * yj + xj ** 2 - xj + 3)
+            yj_temp = yj + h * dyj
+            dyj_next = dyj + h/2*(6 * dyj - 9 * yj + xj ** 2 - xj + 3 +
+                                  6 * dyj_temp - 9 * yj_temp + xj_temp ** 2 - xj_temp + 3)
+            yj_next = yj + h/2*(dyj + dyj_temp)
+            dyj = dyj_next
+            yj = yj_next
+
+    steps_num = np.arange(left, right + h, h).size
+    shape = (3, steps_num)
+    grid = np.empty(shape, np.float)
+    grid[:, 0] = [xj,
+                  dyj,
+                  yj]
+    grid[0] = np.arange(left, right + h, h)
+    for j in np.arange(steps_num - 1):
+        xj, dyj, yj = grid[:, j]
+
+        xj_temp = xj + h
+        dyj_temp = dyj + h * (6 * dyj - 9 * yj + xj ** 2 - xj + 3)
+        yj_temp = yj + h * dyj
+        dyj_next = dyj + h / 2 * (6 * dyj - 9 * yj + xj ** 2 - xj + 3 +
+                                  6 * dyj_temp - 9 * yj_temp + xj_temp ** 2 - xj_temp + 3)
+        yj_next = yj + h / 2 * (dyj + dyj_temp)
+
+        grid[1, j + 1] = dyj_next
+        grid[2, j + 1] = yj_next
 
     return grid[(0, 2), :]
