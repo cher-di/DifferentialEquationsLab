@@ -28,13 +28,13 @@ def solve_analytically(x0: float, y0: float, dy0: float):
     return lambda x: C1 * math.exp(3 * x) + C2 * x * math.exp(3 * x) + 1 / 9 * x ** 2 + 1 / 27 * x + 1 / 3
 
 
-def prepare_data_for_plotting_func(func: callable, borders: tuple, step=0.01):
+def prepare_data_for_plotting_func(func, borders: tuple, step=0.01):
     """
     Подготавливает данные для построения графика функции
 
     :param func: сама фукнция
     :param borders: границы
-    :param step: шаг дискретезации
+    :param step: шаг дискретизации
     :return: (x, y)
     """
     start, finish = borders
@@ -70,7 +70,8 @@ def solve_euler_numerically(x0: float, y0: float, dy0: float, borders: tuple, h=
             dyj = dyj_next
             yj = yj_next
 
-    steps_num = int(math.floor((right - left)) / h + 1)
+    # steps_num = int(math.floor((right - left)) / h + 1)
+    steps_num = np.arange(left, right + h, h).size
     shape = (3, steps_num)
     grid = np.empty(shape, np.float)
     grid[:, 0] = [xj,
@@ -116,7 +117,8 @@ def solve_hyung_numerically(x0: float, y0: float, dy0: float, borders: tuple, h=
             dyj = dyj_next
             yj = yj_next
 
-    steps_num = int(math.floor((right - left)) / h + 1)
+    # steps_num = int(math.floor((right - left)) / h + 1)
+    steps_num = np.arange(left, right + h, h).size
     shape = (3, steps_num)
     grid = np.empty(shape, np.float)
     grid[:, 0] = [xj,
@@ -161,3 +163,29 @@ def make_approximation_function(grid: np.ndarray):
         return (y2 - y1) / (x2 - x1) * (x - x1) + y1
     return linear_approximation
 
+
+def error_comparison(start_h, stop_h, num_h, x0: float, y0: float, dy0: float, borders: tuple, solve_method):
+    """
+    Рассчитывает ошибки для построения графика зависимости ошибки от шага сетки.
+    За ошибку берется максимальное значение невязки (в процентах) на необходимом отрезке
+
+    :param start_h: минимальное значение шага сетки
+    :param stop_h: максимальное значение шага сетки
+    :param num_h: количество отсчетов между start_h и num_h
+    :param x0: точка, для которой известны начальные условия задачи Коши
+    :param y0: функция в точке x0
+    :param dy0: производная функции в точке x0
+    :param borders: границы
+    :param solve_method: метод численного решения ДУ
+    :return: двумерный массив, первая строка - шаг сетки, вторая - ошибка
+    """
+    H = np.linspace(start_h, stop_h, num_h)
+    error = np.empty(num_h)
+    func = solve_analytically(x0, y0, dy0)
+
+    for i, h in enumerate(H):
+        ya = prepare_data_for_plotting_func(func, borders, h)[1]
+        yc = solve_method(x0, y0, dy0, borders, h)[1]
+        error[i] = np.max(np.abs((yc - ya) / ya) * 100)
+
+    return np.array((H, error))
