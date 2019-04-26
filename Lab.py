@@ -70,7 +70,7 @@ def solve_euler_numerically(x0: float, y0: float, dy0: float, borders: tuple, h=
             dyj = dyj_next
             yj = yj_next
 
-    steps_num = np.arange(left, right + h, h).size
+    steps_num = int(math.floor((right - left)) / h + 1)
     shape = (3, steps_num)
     grid = np.empty(shape, np.float)
     grid[:, 0] = [xj,
@@ -116,7 +116,7 @@ def solve_hyung_numerically(x0: float, y0: float, dy0: float, borders: tuple, h=
             dyj = dyj_next
             yj = yj_next
 
-    steps_num = np.arange(left, right + h, h).size
+    steps_num = int(math.floor((right - left)) / h + 1)
     shape = (3, steps_num)
     grid = np.empty(shape, np.float)
     grid[:, 0] = [xj,
@@ -137,3 +137,27 @@ def solve_hyung_numerically(x0: float, y0: float, dy0: float, borders: tuple, h=
         grid[2, j + 1] = yj_next
 
     return grid[(0, 2), :]
+
+
+def make_approximation_function(grid: np.ndarray):
+    """
+    Принимает на вход сетку, полученную в результате численного решения ДУ,
+    и возвращает функцию аппроксимации искомой функции на промежутке, на котором задана сетка.
+
+    :param grid: сетка, полученная в результате численного решения ДУ
+    :return: функция аппроксимации
+    """
+    def linear_approximation(x: float):
+        """
+        Линейная аппроксимация.
+
+        :param x: произвольная точка из области определения функции
+        :return: значение функции в точке x
+        """
+        h = grid[0, 1] - grid[0, 0]
+        x0 = grid[0, 0]
+        j = int(math.floor((x - x0) / h))
+        x1, y1, x2, y2 = grid[0, j], grid[1, j], grid[0, j + 1], grid[1, j + 1]
+        return (y2 - y1) / (x2 - x1) * (x - x1) + y1
+    return linear_approximation
+
