@@ -8,8 +8,8 @@ hx = 0.01
 ht = 0.01
 
 # x_test = 0.7
-tt = np.linspace(t[0], t[1], int((t[1] - t[0]) / ht) + 1)
-u_analytic = np.array([TCLab.solve_analytically(tt, x_test) for x_test in np.arange(x[0], x[1], hx)]).T
+tt = np.arange(t[0], t[1] + ht, ht)
+u_analytic = np.array([TCLab.solve_analytically(tt, x_test) for x_test in np.arange(x[0], x[1] + hx, hx)]).T
 u_euler_implicit = TCLab.solve_implicit_schema(x, t, hx, ht)
 
 print('Implicit:', TCLab.get_u_xt(u_euler_implicit, t[0], x[0], ht, hx, 0.5, 0.5))

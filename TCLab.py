@@ -30,6 +30,12 @@ def solve_analytically(t, x, n=500):
     return U + v
 
 
+def get_u_xt(u, t0, x0, ht, hx, t, x):
+    i = int(np.floor((x - x0) / hx))
+    j = int(np.floor((t - t0) / ht))
+    return u[j, i]
+
+
 def solve_implicit_schema(x: tuple, t: tuple, hx: float, ht: float):
     x0, xmax = x
     t0, tmax = t
