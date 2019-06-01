@@ -30,85 +30,30 @@ def solve_analytically(t, x, n=500):
     return U + v
 
 
-def solve_euler_explicit(x: tuple, t: tuple, hx: float, ht: float):
-    # x0, xmax = x
-    # t0, tmax = t
-    # size_x = np.arange(x0, xmax + hx, hx).size
-    # size_t = np.arange(t0, tmax + ht, ht).size
-    # size_vertical = size_x + size_t - 2
-    # size_horizontal = size_x
-    # u = np.zeros((size_vertical, size_horizontal), dtype=np.float)
-    # u[:, 0] = 2 * np.linspace(t0, t0 + ht * (size_vertical - 1), size_vertical).T
-    # u[:, 1] = 3 * np.linspace(t0, t0 + ht * (size_vertical - 1), size_vertical).T ** 2
-    # u[1, 2:] = ht * (t0 + ht) * np.linspace(x0 + hx * 2, x0 + hx * (size_horizontal - 1), size_horizontal - 2)
-
-    # for i in range(1, size_horizontal - 1):
-    #     for j in range(2, size_vertical - i):
-    #         tj = t0 + ht * (j - 1)
-    #         xi = x0 + hx * (i - 1)
-    #         u[j, i + 1] = 2 * u[j, i] - u[j, i - 1] + hx ** 2 * ((u[j + 1, i] - u[j, i]) / ht - tj * np.sinh(xi))
-
-    # return u[:size_t, :size_x]
-
+def solve_implicit_schema(x: tuple, t: tuple, hx: float, ht: float):
     x0, xmax = x
     t0, tmax = t
-    shape = (int((tmax - t0) / ht) + 1, int((xmax - x0) / hx) + 1)
-    u = np.zeros(shape, dtype=np.float)
-    u[:, 0] = 2 * np.linspace(t0, tmax, shape[0]).T
-    u[:, 1] = 3 * np.linspace(t0, tmax, shape[0]).T ** 2
 
-    for i in range(1, shape[1] - 1):
-        for n in range(0, shape[0] - 1):
-            tn1 = t0 + ht * n
-            xi = x0 + hx * (i - 1)
-            u[n + 1, i + 1] = 2 * u[n + 1, i] - u[n + 1, i - 1] + \
-                hx ** 2 * ((u[n + 1, i] - u[n , i]) / ht - tn1 * np.sinh(xi))
+    nmax, kmax = int((tmax - t0) / ht) + 1, int((xmax - x0) / hx) + 1
 
+    u = np.zeros((nmax, kmax))
+    u[0, :] = 0
+    u[:, 0] = np.linspace(t0, tmax, nmax).T * 2
+    u[:, -1] = np.linspace(t0, tmax, nmax).T ** 2 * 3
+
+    f = lambda k, n: (t0 + (k-1) * ht) * np.sinh(x0 + (k-1) * hx)
+
+    for n in range(1, nmax):
+        A = np.eye(kmax - 2, k=-1) / hx ** 2
+        B = np.eye(kmax - 2) * (-2 / hx ** 2 - 1 / ht)
+        C = np.eye(kmax - 2, k=1) / hx ** 2
+        equations_koef = A + B + C
+
+        F = np.zeros(kmax - 2)
+        F[0] = -u[n - 1, 1] / ht - f(1, n) - u[n, 0] / hx ** 2
+        F[kmax - 3] = -u[n - 1, kmax - 2] / ht - f(kmax - 2, n) - u[n, kmax - 1] / hx ** 2
+        for k in range(1, kmax - 3):
+            F[k] = -u[n - 1, k + 1] / ht - f(k + 1, n)
+        ucurr = np.linalg.solve(equations_koef, F.T)
+        u[n, 1:-1] = ucurr.T
     return u
-
-
-def solve_euler_implicit(x: tuple, t: tuple, hx: float, ht: float):
-    x0, xmax = x
-    t0, tmax = t
-    shape = (int((tmax - t0) / ht) + 1, int((xmax - x0) / hx) + 1)
-    u = np.zeros(shape, dtype=np.float)
-    u[:, 0] = 2 * np.linspace(t0, tmax, shape[0]).T
-    u[:, -1] = 3 * np.linspace(t0, tmax, shape[0]).T ** 2
-    f = lambda n, i: (t0 + ht * (n - 1)) * np.sinh(x0 + hx * (i - 1))
-
-    # for n in range(0, shape[0] - 1):
-        # Ai = np.eye(shape[1], k=-1) / hx ** 2
-        # Ai[-1, -2] = 0
-        # Bi = np.eye(shape[1], k=0) * (2 / hx ** 2 + 1 / ht)
-        # Ci = np.eye(shape[1], k=1) / hx ** 2
-        # Ci[0, 1] = 0
-
-        # Fi = np.zeros((shape[1], 1))
-        # for i in range(0, shape[1]):
-        #     Fi[i, 0] = u[n, i] / ht + f(n + 1, i)
-
-        # Fi[1, 0] = Fi[1, 0] - Ai[1, 0] * u[n, 0]
-        # Fi[-2, 0] = Fi[-2, 0] - Ci[-2, -1] * u[n, -1]
-
-        # X = np.linalg.solve((Ai - Bi + Ci)[1:-2, 1:-2], Fi[1:-2])
-        # u[n + 1, 1:-2] = X.T
-
-    Ai = ht / hx ** 2
-    Ci = - 2 * ht / hx ** 2 - 1
-    Bi = Ai
-    for n in range(1, shape[0]):
-        ai = bi = 0
-        for i in range(1, shape[1] - 1):
-            Fi = -u[n, i - 1] - ht * f(n, i - 1)
-            ai_new = - Bi / (Ai * ai + Ci)
-            bi_new = (Fi - Ai * bi) / (Ai * ai + Ci)
-            ai, bi = ai_new, bi_new
-            u[n, i] = (u[n, i - 1] - bi) / ai
-
-    return u
-
-
-def linear_approximation(u, t0, x0, ht, hx, t, x):
-    i = int(np.floor((x - x0) / hx))
-    j = int(np.floor((t - t0) / ht))
-    return u[j, i]
