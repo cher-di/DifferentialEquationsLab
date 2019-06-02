@@ -12,11 +12,8 @@ tt = np.arange(t[0], t[1] + ht, ht)
 u_analytic = np.array([TCLab.solve_analytically(tt, x_test) for x_test in np.arange(x[0], x[1] + hx, hx)]).T
 u_euler_implicit = TCLab.solve_implicit_schema(x, t, hx, ht)
 
-print('Implicit:', TCLab.get_u_xt(u_euler_implicit, t[0], x[0], ht, hx, 0.5, 0.5))
-print('Analytic:', TCLab.get_u_xt(u_analytic, t[0], x[0], ht, hx, 0.5, 0.5))
-
-# plt.plot(tt, u_analytic, label=u'Аналитическое решение')
-# plt.plot(tt, u_euler_implicit[:, int(np.floor(x_test / hx))], label=u'Неявная схема')
+print('Implicit:', TCLab.get_u_xt(u_euler_implicit, x, t, 0.5, 0.5))
+print('Analytic:', TCLab.get_u_xt(u_analytic, x, t, 0.5, 0.5))
 
 plt.imshow(u_euler_implicit)
 plt.colorbar()

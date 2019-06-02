@@ -30,13 +30,19 @@ def solve_analytically(t, x, n=500):
     return U + v
 
 
-def get_u_xt(u, t0, x0, ht, hx, t, x):
-    i = int(np.floor((x - x0) / hx))
-    j = int(np.floor((t - t0) / ht))
-    return u[j, i]
-
-
 def solve_implicit_schema(x: tuple, t: tuple, hx: float, ht: float):
+    """
+    Принимает на вход границы области, на которой необходимо найти решение
+    уравнения теплопроводности, создает сетку, решает уравнение с помощью
+    неявной разностной схемы и возвращает матрицу значений функций в узлах
+    сетки.
+
+    :param x: границы области по координате x
+    :param t: границы области по координате t
+    :param hx: шаг сетки по координате x
+    :param ht: шаг сетки по координате t
+    :return: двумерный массив u[t, x]
+    """
     x0, xmax = x
     t0, tmax = t
 
@@ -63,3 +69,23 @@ def solve_implicit_schema(x: tuple, t: tuple, hx: float, ht: float):
         ucurr = np.linalg.solve(equations_koef, F.T)
         u[n, 1:-1] = ucurr.T
     return u
+
+
+def get_u_xt(u, xborders: tuple, tborders: tuple, x: float, t: float):
+    """
+    Примимает на вход матрицу значений функции в узлах сетки, границы
+    области решения и координаты точки, значение функции в которой
+    нас интересует. Возвращает значение функции в интересующей нас точке.
+
+    :param u: матрица значений функции в узлах сетки
+    :param xborders: границы области решения по координате x
+    :param tborders: границы области решения по координате t
+    :param x: координата х
+    :param t: координата t
+    :return: значение функции u(x, t)
+    """
+    x0, xmax = xborders
+    t0, tmax = tborders
+    hx, ht = (xmax - x0) / (u.shape[1] - 1), (tmax - t0) / (u.shape[0] - 1)
+    i, j = int(np.floor((x - x0) / hx)), int(np.floor((t - t0) / ht))
+    return u[j, i]
