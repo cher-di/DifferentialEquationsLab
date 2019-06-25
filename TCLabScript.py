@@ -20,7 +20,7 @@ plt.title(u'Уравнение теплопроводности численно
 plt.grid(True)
 plt.show()
 
-step = np.array((0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001))
+step = np.array((0.1, 0.05, 0.01, 0.005))
 u_comparison = np.zeros((step.size, step.size))
 for i, hx in enumerate(step):
     for j, ht in enumerate(step):
@@ -31,8 +31,8 @@ for i, hx in enumerate(step):
 plt.imshow(u_comparison)
 plt.colorbar()
 
-plt.xlabel(u'hx')
-plt.ylabel(u'ht')
+plt.xlabel(u'ht')
+plt.ylabel(u'hx')
 plt.title(u'Зависимость значения u(0.5, 0.5) от шага сетки')
 plt.grid(True)
 plt.show()
